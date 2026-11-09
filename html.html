@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Справочник автомобилей</title>
+    <style>
+        :root {
+            --bg: #f0f4f8; --card: #ffffff; --ink: #1e293b; --muted: #64748b;
+            --line: #e2e8f0; --accent: #3b82f6; --danger: #ef4444;
+            --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; min-height: 100vh; }
+        #app { flex: 1; padding: 20px; max-width: 1180px; margin: 0 auto; width: 100%; }
+        
+        .site-header { position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 15px 20px; z-index: 100; }
+        .header-inner { max-width: 1180px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 800; font-size: 1.3rem; text-decoration: none; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+        nav a { margin-left: 15px; text-decoration: none; color: var(--muted); font-weight: 500; padding: 8px 12px; border-radius: 8px; transition: 0.2s; }
+        nav a:hover, nav a.active { background: #eff6ff; color: var(--accent); }
+        .site-footer { background: #fff; border-top: 1px solid var(--line); padding: 20px; text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: auto; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top: 24px; }
+        .card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line); display: flex; flex-direction: column; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); }
+        .card-img { aspect-ratio: 16/9; background: #e2e8f0; overflow: hidden; }
+        .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
+        .card:hover .card-img img { transform: scale(1.05); }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;}
+        .card-title { margin: 0 0 8px 0; font-size: 1.2rem; }
+        .card-cat { color: var(--muted); margin: 0 0 16px 0; font-size: 0.9rem; }
+        .card-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .btn { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-decoration: none; color: var(--ink); font-family: inherit; font-size: 0.95rem; font-weight: 500; display: inline-block; transition: 0.2s; text-align: center;}
+        .btn:hover { background: #f8fafc; }
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger { color: var(--danger); border-color: #fca5a5; }
+        .btn-danger:hover { background: #fef2f2; }
+        
+        .field { margin-bottom: 16px; display: flex; flex-direction: column; }
+        .field label { margin-bottom: 6px; font-size: 0.9rem; color: var(--muted); font-weight: 600;}
+        .field input, .field select, .field textarea { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 1rem; outline: none; }
+        .field textarea { resize: vertical; min-height: 80px; }
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+        .img-prev { margin-top: 10px; }
+        .img-prev img { max-width: 200px; border-radius: 8px; border: 1px solid var(--line); display: block; }
+
+        .table-wrap { overflow-x: auto; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--line); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+        th { background: #f8fafc; font-weight: 600; color: var(--muted); font-size: 0.9rem; }
+        
+        .toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .toolbar input, .toolbar select { padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+        .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 30px; }
+        .pagination button { padding: 8px 14px; border: 1px solid var(--line); background: #fff; border-radius: 6px; cursor: pointer; }
+        .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        @media (max-width: 600px) { .header-inner { flex-direction: column; gap: 10px; } }
+    </style>
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="#/" class="logo">🚗 АвтоСправочник</a>
+            <nav>
+                <a href="#/" id="nav-home">Каталог</a>
+                <a href="#/admin" id="nav-admin">🔐 Админ-панель</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="app"></main>
+
+    <footer class="site-footer">
+        <div>© Учебный проект. Создан на чистом HTML / CSS / JS. 🚀</div>
+    </footer>
+
+    <script>
+        // ==========================================
+        // БАЗА ДАННЫХ
+        // ==========================================
+        const K = { forms: 'cf_forms', cats: 'cf_categories', nextId: 'cf_nextId', admin: 'cf_admin', initialized: 'cf_initialized' };
+        
+        // ВАЖНО: Эта строка очищает старые квадраты, чтобы загрузились новые картинки!
+        localStorage.removeItem(K.initialized); 
+
+        const getForms = () => JSON.parse(localStorage.getItem(K.forms) || '[]');
+        const setForms = (arr) => localStorage.setItem(K.forms, JSON.stringify(arr));
+        const getCats = () => JSON.parse(localStorage.getItem(K.cats) || '[]');
+        const setCats = (arr) => localStorage.setItem(K.cats, JSON.stringify(arr));
+        const nextId = () => { let id = +(localStorage.getItem(K.nextId) || 1); localStorage.setItem(K.nextId, id + 1); return id; };
+
+        function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        function toast(msg, type = 'info') {
+            const el = document.createElement('div');
+            el.style.cssText = `position:fixed; bottom:20px; right:20px; background:${type==='error'?'#ef4444':'#1e293b'}; color:#fff; padding:14px 24px; border-radius:8px; z-index:9999; transition:opacity 0.3s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-weight: 500;`;
+            el.textContent = msg;
+            document.body.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(r.result);
+                r.onerror = () => reject(r.error);
+                r.readAsDataURL(file);
+            });
+        }
+
+        let tempImageBase64 = null;
+        let currentPage = 1;
+        const itemsPerPage = 6;
+
+        // ==========================================
+        // ДЕМО-ДАННЫЕ С РЕАЛЬНЫМИ КАРТИНКАМИ
+        // ==========================================
+        function init() {
+            setCats(['Седаны', 'Внедорожники', 'Спорткары']);
+            
+            const demo = [
+                { 
+                    title: 'Toyota Camry',
+                    category: 'Седаны', 
+                    desc: 'Надежный и комфортный седан для города. Экономичный двигатель и плавный ход.', 
+                    // Прямая ссылка на фото Тойоты
+                    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/2018_Toyota_Camry_XSE_%28ASV70R%29%2C_front_8.30.17.jpg/640px-2018_Toyota_Camry_XSE_%28ASV70R%29%2C_front_8.30.17.jpg" 
+                },
+                { 
+                    title: 'Jeep Wrangler', 
+                    category: 'Внедорожники', 
+                    desc: 'Настоящий внедорожник для бездорожья. Полный привод и невероятная проходимость.', 
+                    // Прямая ссылка на фото Джипа
+                    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2018_Jeep_Wrangler_Unlimited_Rubicon.jpg/640px-2018_Jeep_Wrangler_Unlimited_Rubicon.jpg" 
+                },
+                { 
+                    title: 'Porsche 911', 
+                    category: 'Спорткары', 
+                    desc: 'Легендарный спорткар. Разгон до 100 км/ч за 3 секунды и максимальная скорость.', 
+                    // Прямая ссылка на фото Порше
+                    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/2020_Porsche_911_Carrera_S_Automatic_3.0_Front.jpg/640px-2020_Porsche_911_Carrera_S_Automatic_3.0_Front.jpg" 
+                },
+                { 
+                    title: 'BMW X5', 
+                    category: 'Внедорожники', 
+                    desc: 'Премиальный кроссовер. Сочетание роскоши и отличной управляемости.', 
+                    // Прямая ссылка на фото БМВ
+                    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/2019_BMW_X5_M50d_Automatic_3.0_Front.jpg/640px-2019_BMW_X5_M50d_Automatic_3.0_Front.jpg" 
+                },
+                { 
+                    title: 'Audi A4', 
+                    category: 'Седаны', 
+                    desc: 'Стильный немецкий седан с современным дизайном и богатой комплектацией.', 
+                    // Прямая ссылка на фото Ауди
+                    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/2020_Audi_A4_S_line_40_TFSI_2.0_Front.jpg/640px-2020_Audi_A4_S_line_40_TFSI_2.0_Front.jpg" 
+                },
+                { 
+                    title: 'Tesla Model S', 
+                    category: 'Седаны', 
+                    desc: 'Электрический седан будущего. Автопилот и мгновенный крутящий момент.', 
+                    // Прямая ссылка на фото Теслы
+                    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/2018_Tesla_Model_S_75D_Front.jpg/640px-2018_Tesla_Model_S_75D_Front.jpg" 
+                }
+            ];
+            
+            const forms = demo.map((d, i) => ({
+                id: i + 1, title: d.title, category: d.category, desc: d.desc, main_image: d.img, views: Math.floor(Math.random() * 50), created_at: Date.now()
+            }));
+            
+            setForms(forms);
+            localStorage.setItem(K.nextId, forms.length + 1);
+            localStorage.setItem(K.initialized, '1');
+            
+            route();
+        }
+
+        // ==========================================
+        // ГЛАВНАЯ (Каталог)
+        // ==========================================
+        function renderHome() {
+            const forms = getForms();
+            const search = window.currentSearch || '';
+            const catFilter = window.currentCatFilter || '';
+
+            let filtered = forms.filter(f => {
+                const matchSearch = f.title.toLowerCase().includes(search.toLowerCase());
+                const matchCat = catFilter ? f.category === catFilter : true;
+                return matchSearch && matchCat;
+            });
+
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+            const start = (currentPage - 1) * itemsPerPage;
+            const paginated = filtered.slice(start, start + itemsPerPage);
+
+            let html = `
+                <h1 style="margin-bottom: 20px;">Каталог автомобилей</h1>
+                <div class="toolbar">
+                    <input type="text" id="search" placeholder="🔍 Поиск по названию..." value="${esc(search)}" style="flex:1;">
+                    <select id="catFilter">
+                        <option value="">Все категории</option>
+                        ${getCats().map(c => `<option value="${esc(c)}" ${catFilter===c?'selected':''}>${esc(c)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="grid">
+            `;
+
+            if (paginated.length === 0) html += '<p style="grid-column:1/-1;">Ничего не найдено.</p>';
+
+            paginated.forEach(f => {
+                html += `
+                    <div class="card">
+                        <div class="card-img"><img src="${f.main_image}" alt="${esc(f.title)}"></div>
+                        <div class="card-body">
+                            <div>
+                                <h3 class="card-title">${esc(f.title)}</h3>
+                                <p class="card-cat">${esc(f.category)}</p>
+                                <p class="card-desc">${esc(f.desc || 'Описание отсутствует')}</p>
+                            </div>
+                            <a href="#/view/${f.id}" class="btn btn-primary">Подробнее</a>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+
+            if (totalPages > 1) {
+                html += `<div class="pagination">`;
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                }
+                html += `</div>`;
+            }
+
+            document.getElementById('app').innerHTML = html;
+
+            document.getElementById('search').addEventListener('input', (e) => {
+                window.currentSearch = e.target.value;
+                currentPage = 1;
+                renderHome();
+            });
+            document.getElementById('catFilter').addEventListener('change', (e) => {
+                window.currentCatFilter = e.target.value;
+                currentPage = 1;
+                renderHome();
+            });
+        }
+
+        window.changePage = (page) => { currentPage = page; renderHome(); };
+
+        // ==========================================
+        // ПРОСМОТР
+        // ==========================================
+        function renderView(id) {
+            const forms = getForms();
+            const item = forms.find(f => f.id === id);
+            if (!item) return document.getElementById('app').innerHTML = '<h2>Машина не найдена</h2>';
+            
+            item.views = (item.views || 0) + 1;
+            setForms(forms);
+
+            document.getElementById('app').innerHTML = `
+                <a href="#/" class="btn" style="margin-bottom:20px;">← Назад</a>
+                <div style="background:#fff; padding:30px; border-radius:14px; box-shadow:var(--shadow); border:1px solid var(--line);">
+                    <h1 style="margin-top:0">${esc(item.title)}</h1>
+                    <p style="color:var(--muted);"><strong>Категория:</strong> ${esc(item.category)} | <strong>Просмотров:</strong> ${item.views}</p>
+                    <img src="${item.main_image}" style="max-width:100%; max-height:400px; object-fit:cover; border-radius:10px; margin: 20px 0;">
+                    <p style="font-size:1.1rem; line-height:1.6;">${esc(item.desc || 'Описание отсутствует')}</p>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // АДМИНКА
+        // ==========================================
+        const isAuth = () => sessionStorage.getItem('cf_admin') === '1';
+
+        function renderAdmin() {
+            if (!isAuth()) {
+                document.getElementById('app').innerHTML = `
+                    <div style="max-width:350px; margin:60px auto; background:#fff; padding:30px; border-radius:14px; box-shadow:var(--shadow); border:1px solid var(--line);">
+                        <h2 style="text-align:center;">Вход в панель 🔐</h2>
+                        <p style="font-size:0.9rem; color:var(--muted); text-align:center;">admin / admin123</p>
+                        <div class="field"><label>Логин</label><input type="text" id="login"></div>
+                        <div class="field"><label>Пароль</label><input type="password" id="pass"></div>
+                        <button class="btn btn-primary" onclick="doLogin()" style="width:100%;">Войти</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const forms = getForms();
+            document.getElementById('app').innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                    <h1 style="margin:0;">Админ-панель</h1>
+                    <button class="btn" onclick="doLogout()">Выйти</button>
+                </div>
+                <div style="margin-bottom:24px;">
+                    <button class="btn btn-primary" onclick="renderForm()">+ Добавить авто</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Фото</th><th>Название</th><th>Категория</th><th>Действия</th></tr></thead>
+                        <tbody>
+                            ${forms.length === 0 ? '<tr><td colspan="4" style="text-align:center;">Записей нет</td></tr>' : ''}
+                            ${forms.map(f => `
+                                <tr>
+                                    <td><img src="${f.main_image}" style="width:60px; height:40px; object-fit:cover; border-radius:6px;"></td>
+                                    <td style="font-weight:500;">${esc(f.title)}</td>
+                                    <td><span style="background:var(--bg); padding:4px 8px; border-radius:6px;">${esc(f.category)}</span></td>
+                                    <td><button class="btn btn-danger" onclick="delForm(${f.id})">Удалить</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        window.doLogin = () => {
+            if (document.getElementById('login').value === 'admin' && document.getElementById('pass').value === 'admin123') {
+                sessionStorage.setItem('cf_admin', '1');
+                renderAdmin();
+            } else toast('Неверный логин или пароль', 'error');
+        };
+        window.doLogout = () => { sessionStorage.removeItem('cf_admin'); location.hash = '#/'; };
+        window.delForm = (id) => { if(confirm('Удалить?')) { setForms(getForms().filter(f => f.id !== id)); renderAdmin(); toast('Удалено'); } };
+
+        // ==========================================
+        // ДОБАВЛЕНИЕ
+        // ==========================================
+        window.renderForm = () => {
+            tempImageBase64 = null;
+            document.getElementById('app').innerHTML = `
+                <button class="btn" onclick="renderAdmin()" style="margin-bottom:20px;">← Назад</button>
+                <h2>Добавление авто</h2>
+                <div style="background:#fff; padding:24px; border-radius:14px; box-shadow:var(--shadow); border:1px solid var(--line); max-width:600px;">
+                    <div class="field"><label>Название</label><input type="text" id="new-title" placeholder="Например, Audi Q5"></div>
+                    <div class="field"><label>Категория</label><select id="new-cat">${getCats().map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></div>
+                    <div class="field"><label>Описание</label><textarea id="new-desc" placeholder="Краткое описание автомобиля..."></textarea></div>
+                    <div class="field">
+                        <label>Фотография (до 500 КБ)</label>
+                        <input type="file" id="mainFile" accept="image/*">
+                        <div id="mainPreview" class="img-prev"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveNewForm()">Сохранить</button>
+                </div>
+            `;
+            document.getElementById('mainFile').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 500 * 1024) { toast('Файл больше 500 КБ!', 'error'); e.target.value = ''; return; }
+                tempImageBase64 = await readFileAsDataURL(file);
+                document.getElementById('mainPreview').innerHTML = `<img src="${tempImageBase64}">`;
+            });
+        };
+
+        window.saveNewForm = () => {
+            const title = document.getElementById('new-title').value.trim();
+            const cat = document.getElementById('new-cat').value;
+            const desc = document.getElementById('new-desc').value.trim();
+            if (!title) return toast('Введите название!', 'error');
+            
+            const forms = getForms();
+            forms.push({ id: nextId(), title, category: cat, desc, main_image: tempImageBase64 || ph(title), views: 0, created_at: Date.now() });
+            setForms(forms);
+            toast('Добавлено!');
+            location.hash = '#/admin';
+        };
+
+        // ==========================================
+        // РОУТЕР
+        // ==========================================
+        function route() {
+            const hash = location.hash.slice(1) || '/';
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            if (hash.startsWith('/admin')) document.getElementById('nav-admin').classList.add('active');
+            else document.getElementById('nav-home').classList.add('active');
+
+            if (hash === '/' || hash === '') renderHome();
+            else if (hash === '/admin') renderAdmin();
+            else if (hash.startsWith('/view/')) renderView(parseInt(hash.split('/')[2]));
+            else renderHome();
+        }
+
+        window.addEventListener('hashchange', route);
+        
+        // ЗАПУСК
+        init();
+    </script>
+</body>
+</html>
